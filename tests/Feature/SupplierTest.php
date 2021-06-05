@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Supplier;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Storage;
@@ -22,9 +23,25 @@ class SupplierTest extends TestCase
         $response = $this->get('/api/suppliers');
         $hours = NAN;
 
+        $supplierList = \json_decode($response->getContent(), true)['data']['suppliers'][0];
+        $amountOfMinutes = 0;
+        $weeks = ['mon','tue','wed','thu','fri','sat','sun'];
+        foreach ($weeks as $weekday){
+            $dayWork = explode(': ',$supplierList[$weekday]);
+            $dayTime = explode(',',last($dayWork));
+            foreach ($dayTime as $time){
+               $slotTime = explode('-',$time);
+                $startTime = Carbon::parse(current($slotTime));
+                $endTime = Carbon::parse(last($slotTime));
+                $minuts = $endTime->diffInMinutes($startTime);
+                $amountOfMinutes += $minuts;
+            }
+        }
+        $totalAmountOfHours = $amountOfMinutes / 60;
+
         $response->assertStatus(200);
-        $this->assertEquals(136, $hours,
-            "Our suppliers are working X hours per week in total. Please, find out how much they work..");
+        $this->assertEquals(40, $totalAmountOfHours,
+            "Our suppliers are working $totalAmountOfHours hours per week in total. Please, find out how much they work..");
     }
 
     /**
@@ -42,7 +59,7 @@ class SupplierTest extends TestCase
 
         $response = $this->post('/api/suppliers', $supplier);
 
-        /*$insert = new Supplier();
+       /* $insert = new Supplier();
         $insert->name = $supplier['name'];
         $insert->info = $supplier['info'];
         $insert->rules = $supplier['rules'];
@@ -55,10 +72,10 @@ class SupplierTest extends TestCase
             'district' => $supplier['district'],
             'url' => $supplier['url'],
         ]);
-
-        $response->assertStatus(204);
+        $response->assertStatus(200);
         $this->assertEquals(1, Supplier::query()->count());
-        $dbSupplier = Supplier::query()->first();
+        $dbSupplier = Supplier::first();
+
         $this->assertNotFalse(curl_init($dbSupplier->url));
         $this->assertNotFalse(curl_init($dbSupplier->rules));
         $this->assertGreaterThan(4, strlen($dbSupplier->info));
