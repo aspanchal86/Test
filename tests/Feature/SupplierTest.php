@@ -42,6 +42,20 @@ class SupplierTest extends TestCase
 
         $response = $this->post('/api/suppliers', $supplier);
 
+        /*$insert = new Supplier();
+        $insert->name = $supplier['name'];
+        $insert->info = $supplier['info'];
+        $insert->rules = $supplier['rules'];
+        $insert->district = $supplier['district'];
+        $insert->url = $supplier['url'];
+        $insert->save();*/
+        $insert = Supplier::updateOrCreate(['name'=>$supplier['name']],[
+            'info' => $supplier['info'],
+            'rules' => $supplier['rules'],
+            'district' => $supplier['district'],
+            'url' => $supplier['url'],
+        ]);
+
         $response->assertStatus(204);
         $this->assertEquals(1, Supplier::query()->count());
         $dbSupplier = Supplier::query()->first();
