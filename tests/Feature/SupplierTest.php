@@ -23,24 +23,25 @@ class SupplierTest extends TestCase
         $response = $this->get('/api/suppliers');
         $hours = NAN;
 
-        $supplierList = \json_decode($response->getContent(), true)['data']['suppliers'][0];
+        $supplierLists = \json_decode($response->getContent(), true)['data']['suppliers'];
         $amountOfMinutes = 0;
         $weeks = ['mon','tue','wed','thu','fri','sat','sun'];
-        foreach ($weeks as $weekday){
-            $dayWork = explode(': ',$supplierList[$weekday]);
-            $dayTime = explode(',',last($dayWork));
-            foreach ($dayTime as $time){
-               $slotTime = explode('-',$time);
-                $startTime = Carbon::parse(current($slotTime));
-                $endTime = Carbon::parse(last($slotTime));
-                $minuts = $endTime->diffInMinutes($startTime);
-                $amountOfMinutes += $minuts;
+        foreach($supplierLists as $supplierList){
+            foreach ($weeks as $weekday){
+                $dayWork = explode(': ',$supplierList[$weekday]);
+                $dayTime = explode(',',last($dayWork));
+                foreach ($dayTime as $time){
+                   $slotTime = explode('-',$time);
+                    $startTime = Carbon::parse(current($slotTime));
+                    $endTime = Carbon::parse(last($slotTime));
+                    $minuts = $endTime->diffInMinutes($startTime);
+                    $amountOfMinutes += $minuts;
+                }
             }
         }
         $totalAmountOfHours = $amountOfMinutes / 60;
-
         $response->assertStatus(200);
-        $this->assertEquals(40, $totalAmountOfHours,
+        $this->assertEquals(136, $totalAmountOfHours,
             "Our suppliers are working $totalAmountOfHours hours per week in total. Please, find out how much they work..");
     }
 
@@ -58,31 +59,14 @@ class SupplierTest extends TestCase
         $supplier = \json_decode($responseList->getContent(), true)['data']['suppliers'][0];
 
         $response = $this->post('/api/suppliers', $supplier);
-
-       /* $insert = new Supplier();
-        $insert->name = $supplier['name'];
-        $insert->info = $supplier['info'];
-        $insert->rules = $supplier['rules'];
-        $insert->district = $supplier['district'];
-        $insert->url = $supplier['url'];
-        $insert->save();*/
-        $insert = Supplier::updateOrCreate(['name'=>$supplier['name']],[
-            'info' => $supplier['info'],
-            'rules' => $supplier['rules'],
-            'district' => $supplier['district'],
-            'url' => $supplier['url'],
-        ]);
-        $response->assertStatus(200);
+        $response->assertStatus(204);
         $this->assertEquals(1, Supplier::query()->count());
         $dbSupplier = Supplier::first();
-
         $this->assertNotFalse(curl_init($dbSupplier->url));
         $this->assertNotFalse(curl_init($dbSupplier->rules));
         $this->assertGreaterThan(4, strlen($dbSupplier->info));
         $this->assertNotNull($dbSupplier->name);
         $this->assertNotNull($dbSupplier->district);
-
-
         $response = $this->post('/api/suppliers', $supplier);
         $response->assertStatus(422);
     }

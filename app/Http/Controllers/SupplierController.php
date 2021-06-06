@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class SupplierController extends Controller
 {
@@ -37,6 +38,37 @@ class SupplierController extends Controller
      */
     public function store(Request $request)
     {
+        $rules = [
+            'name' => 'required|unique:suppliers',
+            'info' => 'required',
+            'rules' => 'required',
+            'district' => 'required',
+            'url' => 'required',
+        ];
+
+
+        // $validator = Validator::make(
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return response()->json(['status'=>0,"message" =>$validator->messages()->all()],422,[
+                'Content-Type' => 'application/json'
+            ]);
+        }
+
+        $supplier = new Supplier();
+        $supplier->name = $request->name;
+        $supplier->info = $request->info;
+        $supplier->rules = $request->rules;
+        $supplier->district = $request->district;
+        $supplier->url = $request->url;
+        $supplier->save();
+
+        return response()->json(['status'=>1],204,[
+                    'Content-Type' => 'application/json'
+                ]);
+
     }
 
     /**
