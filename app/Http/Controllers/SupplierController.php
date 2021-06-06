@@ -41,9 +41,9 @@ class SupplierController extends Controller
         $rules = [
             'name' => 'required|unique:suppliers',
             'info' => 'required',
-            'rules' => 'required',
+            'rules' => 'required|url',
             'district' => 'required',
-            'url' => 'required',
+            'url' => 'required|url',
         ];
 
 
@@ -52,9 +52,7 @@ class SupplierController extends Controller
         $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
-            return response()->json(['status'=>0,"message" =>$validator->messages()->all()],422,[
-                'Content-Type' => 'application/json'
-            ]);
+            return response()->json(['status'=>0,"message" =>$validator->messages()->all()],422);
         }
 
         $supplier = new Supplier();
@@ -65,9 +63,7 @@ class SupplierController extends Controller
         $supplier->url = $request->url;
         $supplier->save();
 
-        return response()->json(['status'=>1],204,[
-                    'Content-Type' => 'application/json'
-                ]);
+        return response()->json(['status'=>1],204);
 
     }
 
